@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Simulation Engine</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 2rem;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #b59f3b; /* Wordle Yellow */
+        }
+        
+        p {
+            font-size: 1.1rem;
+            color: #b0b0b0;
+            max-width: 650px;
+            margin: 1rem auto;
+        }
+
+        .controls {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background-color: #1e1e1e;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        input[type="text"] {
+            font-size: 1.2rem;
+            padding: 0.8rem;
+            border-radius: 8px;
+            border: 1px solid #444;
+            background-color: #2a2a2a;
+            color: #e0e0e0;
+            text-align: center;
+            text-transform: uppercase;
+            width: 150px;
+        }
+
+        button {
+            font-size: 1rem;
+            padding: 0.8rem 1.2rem;
+            border-radius: 8px;
+            border: 1px solid #b59f3b;
+            background-color: #b59f3b;
+            color: #121212;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #c9b458;
+        }
+        button:disabled {
+            background-color: #333;
+            color: #777;
+            border-color: #333;
+            cursor: not-allowed;
+        }
+
+        /* Animation Section */
+        #simulation-animation {
+            display: none;
+            padding: 2rem;
+            background-color: #1e1e1e;
+            border-radius: 12px;
+            margin-top: 2rem;
+        }
+        #animation-text {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        #animation-counter {
+            font-family: monospace;
+            font-size: 1.2rem;
+            color: #4CAF50;
+        }
+
+        /* Results Section */
+        #simulation-result {
+            margin-top: 2rem;
+        }
+        .chart-container {
+            background-color: #1e1e1e;
+            padding: 1.5rem;
+            border-radius: 12px;
+        }
+        
+        /* Library Section */
+        #library-container {
+            margin-top: 3rem;
+            padding: 1.5rem;
+            background-color: #1e1e1e;
+            border-radius: 12px;
+        }
+        #library-counter {
+            font-size: 1.2rem;
+            color: #b0b0b0;
+            margin-bottom: 1rem;
+        }
+        #library-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        .library-item {
+            width: 80px;
+            height: 30px;
+            background-color: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: monospace;
+            font-size: 1rem;
+            animation: popIn 0.3s ease-out;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>The Simulation Engine</h1>
+        <p>This is the "pre-computation" step. For every possible Wordle answer, we simulate thousands of games to create a unique statistical "fingerprint".</p>
+
+        <div class="controls">
+            <input type="text" id="word-input" placeholder="e.g., PROXY" maxlength="5">
+            <button id="simulate-button">Simulate Fingerprint</button>
+        </div>
+
+        <div id="simulation-animation">
+            <div id="animation-text"></div>
+            <div id="animation-counter"></div>
+        </div>
+
+        <div id="simulation-result">
+            <div class="chart-container" style="display: none;">
+                <canvas id="fingerprint-chart"></canvas>
+            </div>
+        </div>
+
+        <div id="library-container">
+            <h2>The Pre-Computed Library</h2>
+            <div id="library-counter">0 / 12,972 Fingerprints Generated</div>
+            <div id="library-grid"></div>
+        </div>
+    </div>
+
+<script>
+    // --- MOCK DATA ---
+    // Pre-calculated fingerprints for a few example words.
+    const fingerprintData = {
+        'PROXY': { labels: ['NNYNN', 'YNYNN', 'NNNNN', 'NNNNY', 'YNNYN'], values: [18, 15, 12, 11, 9] },
+        'LIGHT': { labels: ['YNNNN', 'NNNNN', 'NNNYN', 'NNYNN', 'YNNYN'], values: [25, 21, 15, 10, 8] },
+        'AUDIO': { labels: ['YNYYN', 'NNNNN', 'YNNYN', 'YNYNN', 'NNYNN'], values: [28, 16, 14, 11, 7] },
+        'CRANE': { labels: ['YNYNN', 'NNYNN', 'NNNNN', 'YNNYN', 'YNNNN'], values: [22, 19, 16, 12, 10] },
+    };
+
+    const wordInput = document.getElementById('word-input');
+    const simulateButton = document.getElementById('simulate-button');
+    const animationDiv = document.getElementById('simulation-animation');
+    const animationText = document.getElementById('animation-text');
+    const animationCounter = document.getElementById('animation-counter');
+    const resultDiv = document.getElementById('simulation-result');
+    const chartContainer = resultDiv.querySelector('.chart-container');
+    const libraryGrid = document.getElementById('library-grid');
+    const libraryCounter = document.getElementById('library-counter');
+
+    let fingerprintChart = null;
+    let simulatedWords = new Set();
+    
+    // Chart.js helper function
+    function createFingerprintChart(word, data) {
+        if (fingerprintChart) {
+            fingerprintChart.destroy();
+        }
+        const ctx = document.getElementById('fingerprint-chart').getContext('2d');
+        fingerprintChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: `Frequency`,
+                    data: data.values,
+                    backgroundColor: '#b59f3b',
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    title: { display: true, text: `Statistical Fingerprint for "${word}"`, color: '#e0e0e0', font: { size: 18 } }
+                },
+                scales: {
+                    y: { ticks: { color: '#aaa' }, grid: { color: '#444' } },
+                    x: { ticks: { color: '#aaa' }, grid: { color: 'transparent' } }
+                }
+            }
+        });
+        chartContainer.style.display = 'block';
+    }
+    
+    // Main simulation function
+    simulateButton.addEventListener('click', () => {
+        const word = wordInput.value.toUpperCase();
+        
+        if (word.length !== 5 || !fingerprintData[word]) {
+            alert('Please enter a valid 5-letter word from our examples: PROXY, LIGHT, AUDIO, CRANE');
+            return;
+        }
+
+        // --- Start Simulation Animation ---
+        simulateButton.disabled = true;
+        wordInput.disabled = true;
+        chartContainer.style.display = 'none';
+        animationDiv.style.display = 'block';
+        animationText.textContent = `Simulating thousands of games where the answer is "${word}"...`;
+
+        let gameCount = 0;
+        const animationInterval = setInterval(() => {
+            gameCount += Math.floor(Math.random() * 150) + 50;
+            if (gameCount > 5000) gameCount = 5000;
+            animationCounter.textContent = `Simulated Game #${gameCount}`;
+        }, 50);
+
+        // --- End Simulation after a delay ---
+        setTimeout(() => {
+            clearInterval(animationInterval);
+            animationDiv.style.display = 'none';
+
+            // Create the chart
+            createFingerprintChart(word, fingerprintData[word]);
+
+            // Add to library if it's a new word
+            if (!simulatedWords.has(word)) {
+                simulatedWords.add(word);
+                const libraryItem = document.createElement('div');
+                libraryItem.className = 'library-item';
+                libraryItem.textContent = word;
+                libraryGrid.appendChild(libraryItem);
+                libraryCounter.textContent = `${simulatedWords.size} / 12,972 Fingerprints Generated`;
+            }
+
+            simulateButton.disabled = false;
+            wordInput.disabled = false;
+        }, 2000); // 2-second simulation
+    });
+
+</script>
+</body>
+</html>

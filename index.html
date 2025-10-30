@@ -3,31 +3,240 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TTNTF01 — Index</title>
+    <title>Thuyết Trình Dự Án: Giải Wordle Trong 1 Lần Thử</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background:#f7f7f8; color:#111; margin:0; padding:2rem; }
-        .wrap { max-width:900px; margin:0 auto; background:#fff; border-radius:10px; padding:2rem; box-shadow:0 8px 30px rgba(0,0,0,0.06); }
-        h1 { color:#1877f2 }
-        ul { line-height:1.8 }
-        a { color:#1877f2; text-decoration:none }
-        a.button { display:inline-block; margin-top:1rem; padding:0.6rem 1rem; background:#1877f2; color:white; border-radius:6px }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial;
+            background-color: #f0f2f5;
+            color: #1c1e21;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .presentation {
+            width: 90%;
+            max-width: 900px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .slide {
+            padding: 40px 50px;
+            border-bottom: 1px solid #e0e0e0;
+            opacity: 0;
+            display: none;
+            animation: fadeIn 0.8s forwards;
+        }
+        .slide.active {
+            display: block;
+            opacity: 1;
+        }
+        .slide:last-child {
+            border-bottom: none;
+        }
+        h1, h2 {
+            color: #1877f2;
+            border-bottom: 2px solid #e7f3ff;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        h1 {
+            font-size: 2.5em;
+            text-align: center;
+        }
+        h2 {
+            font-size: 1.8em;
+        }
+        p, li {
+            font-size: 1.1em;
+            line-height: 1.6;
+            color: #333;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        strong {
+            color: #0056b3;
+        }
+        .emoji {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+        .code {
+            background-color: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: "Courier New", Courier, monospace;
+            color: #e83e8c;
+        }
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 50px;
+            background-color: #f7f7f7;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            background-color: #1877f2;
+            color: white;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #166fe5;
+        }
+        button:disabled {
+            background-color: #ccd0d5;
+            cursor: not-allowed;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .highlight {
+            background-color: #fffbe6;
+            padding: 15px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .step-link {
+            display:inline-block;
+            margin-top:10px;
+            padding:8px 12px;
+            background:#1877f2;
+            color:#fff;
+            border-radius:6px;
+            text-decoration:none;
+        }
     </style>
 </head>
 <body>
-<div class="wrap">
-    <h1>TTNTF01 — Trang chính</h1>
-    <p>Chào mừng! Đây là thư mục demo dành cho dự án "Giải Wordle trong 1 lần thử". Dưới đây là các trang demo có sẵn trong repository.</p>
 
-    <ul>
-        <li><a href="tt10.html">Thuyết trình (tiếng Việt) — tt10.html</a></li>
-        <li><a href="ttmh02.html">Step: Lắng Nghe Đám Đông — ttmh02.html</a></li>
-        <li><a href="ttmh03.html">Step: Simulation Engine — ttmh03.html</a></li>
-        <li><a href="ttmh04.html">Step: The Final Guess — ttmh04.html</a></li>
-    </ul>
+<div class="presentation">
+    
+    <div class="slide active" id="slide1">
+        <h1>Giải Wordle 🟩🟩🟩🟩🟩 Ngay Lần Đoán Đầu Tiên</h1>
+        <p style="text-align: center; font-size: 1.2em;">Sử dụng "Trí Tuệ Đám Đông" từ Dữ liệu Twitter</p>
+    </div>
 
-    <p>Ghi chú: Trong trang thuyết trình (tt10.html) mình đã thêm liên kết trực tiếp tới các trang mô tả tương ứng ở các bước 1, 2 và 3.</p>
+    <div class="slide" id="slide2">
+        <h2><span class="emoji">🎯</span>Bài Toán Đặt Ra</h2>
+        <p>Làm thế nào để tìm ra đáp án Wordle của ngày mà <strong>không cần phải thử nhiều lần?</strong></p>
+        <p>Thay vì dựa vào may mắn hay tần suất chữ cái, chúng ta có thể khai thác một nguồn tài nguyên khổng lồ: <strong>kết quả mà hàng nghìn người chơi chia sẻ mỗi ngày.</strong></p>
+    </div>
+    
+    <div class="slide" id="slide3">
+        <h2><span class="emoji">💡</span>Ý Tưởng Đột Phá</h2>
+        <p>Đảo ngược vấn đề:</p>
+        <div class="highlight">
+            <p><strong>Thay vì hỏi:</strong> "Từ nào là từ tốt nhất để đoán?"</p>
+            <p><strong>Chúng ta hỏi:</strong> "Dựa trên hàng nghìn kết quả <code class="code">⬛🟨🟩</code> mà mọi người đã đăng, từ đáp án nào có khả năng tạo ra những kết quả này nhất?"</p>
+        </div>
+        <p>Chúng ta sẽ tìm "dấu vân tay" ⬛🟨🟩 của mỗi từ và so sánh nó với "dấu vân tay" thực tế từ cộng đồng.</p>
+    </div>
 
-    <a class="button" href="tt10.html">Mở thuyết trình</a>
+    <div class="slide" id="slide4">
+        <h2><span class="emoji">1️⃣</span> Bước 1: Xây Dựng Nền Tảng (Mô phỏng)</h2>
+        <p>Đầu tiên, chúng ta cần một cơ sở dữ liệu để so sánh.</p>
+        <ul>
+            <li><strong>Tạo Từ điển:</strong> Thu thập toàn bộ <strong>12,972 từ</strong> hợp lệ từ mã nguồn của Wordle.</li>
+            <li><strong>Chạy Mô phỏng:</strong> Với mỗi từ trong từ điển, giả lập hàng nghìn ván chơi để xem nếu nó là đáp án thì các mẫu <code class="code">⬛🟨🟩</code> sẽ trông như thế nào.</li>
+        </ul>
+        <p>➡️ Kết quả: Mỗi từ sẽ có một <strong>"dấu vân tay mô phỏng"</strong> (fingerprint) độc nhất.</p>
+        <a class="step-link" href="ttmh03.html" target="_blank">Mở trang Simulation Engine (ttmh03.html)</a>
+    </div>
+
+    <div class="slide" id="slide5">
+        <h2><span class="emoji">2️⃣</span> Bước 2: Lắng Nghe Đám Đông (Thu thập)</h2>
+        <p>Hàng ngày, chương trình tự động thực hiện:</p>
+        <ul>
+            <li><strong>Thu thập Tweets:</strong> Tải về hàng nghìn tweet chứa kết quả Wordle của ngày hôm đó.</li>
+            <li><strong>Trích xuất Mẫu:</strong> Đọc và đếm tất cả các chuỗi <code class="code">⬛🟨🟩</code> mà người chơi đã đăng.</li>
+        </ul>
+        <p>➡️ Kết quả: Chúng ta có một <strong>"dấu vân tay thực tế"</strong> của cộng đồng cho ngày hôm đó.</p>
+        <a class="step-link" href="ttmh02.html" target="_blank">Mở trang Thu thập (ttmh02.html)</a>
+    </div>
+
+    <div class="slide" id="slide6">
+        <h2><span class="emoji">3️⃣</span> Bước 3: So Khớp & Xếp Hạng</h2>
+        <p>Đây là bước ma thuật! Chương trình so sánh "dấu vân tay thực tế" với 12,972 "dấu vân tay mô phỏng" dựa trên 3 tiêu chí:</p>
+        <ol>
+            <li><strong>Độ tương đồng toàn bộ:</strong> Mẫu <code class="code">⬛🟨🟩</code> từ Twitter giống với mẫu mô phỏng của từ nào nhất?</li>
+            <li><strong>Độ tương đồng ở lượt áp chót:</strong> Tín hiệu mạnh nhất! Mẫu ngay trước khi chiến thắng <code class="code">🟩🟩🟩🟩🟩</code> có giống nhau không?</li>
+            <li><strong>Các mẫu không hợp lệ:</strong> Từ nào có ít "mẫu không thể xảy ra" xuất hiện trong dữ liệu thực tế nhất?</li>
+        </ol>
+        <a class="step-link" href="ttmh04.html" target="_blank">Mở trang So Khớp & Xếp Hạng (ttmh04.html)</a>
+    </div>
+
+    <div class="slide" id="slide7">
+        <h2><span class="emoji">🏆</span> Phán Quyết Cuối Cùng</h2>
+        <p>Sau khi mỗi từ được chấm điểm dựa trên 3 tiêu chí trên:</p>
+        <ul>
+            <li>Chương trình tính một <strong>điểm xếp hạng trung bình</strong> cho mỗi từ.</li>
+            <li>Từ có điểm số cao nhất (tức là phù hợp nhất với dữ liệu thực tế) được chọn làm dự đoán.</li>
+        </ul>
+        <div class="highlight">
+            <p><strong>Kết quả:</strong> Phương pháp này đã chứng minh hiệu quả đáng kinh ngạc, đoán đúng đáp án ngay trong lần thử đầu tiên trong hầu hết các ngày thử nghiệm!</p>
+        </div>
+    </div>
+    
+    <div class="slide" id="slide8">
+        <h2><span class="emoji">🎉</span> Tổng Kết</h2>
+        <p>Dự án này là một minh chứng tuyệt vời cho sức mạnh của việc khai thác dữ liệu cộng đồng.</p>
+        <ul>
+            <li><strong>Sáng tạo:</strong> Thay đổi hoàn toàn cách tiếp cận vấn đề.</li>
+            <li><strong>Hiệu quả:</strong> Đạt được kết quả gần như hoàn hảo.</li>
+            <li><strong>Thông minh:</strong> Biến những chia sẻ tưởng chừng đơn giản thành chìa khóa để giải mã câu đố.</li>
+        </ul>
+        <p style="text-align: center; margin-top: 30px; font-size: 1.3em;"><strong>Cảm ơn đã lắng nghe!</strong></p>
+    </div>
+
+    <div class="navigation">
+        <button id="prevBtn" onclick="changeSlide(-1)">Trước</button>
+        <button id="nextBtn" onclick="changeSlide(1)">Sau</button>
+    </div>
+
 </div>
+
+<script>
+    let currentSlide = 1;
+    const totalSlides = document.querySelectorAll('.slide').length;
+
+    function showSlide(slideIndex) {
+        const slides = document.querySelectorAll('.slide');
+        slides.forEach(slide => {
+            slide.classList.remove('active');
+        });
+        document.getElementById('slide' + slideIndex).classList.add('active');
+        
+        document.getElementById('prevBtn').disabled = (slideIndex === 1);
+        document.getElementById('nextBtn').disabled = (slideIndex === totalSlides);
+    }
+
+    function changeSlide(direction) {
+        currentSlide += direction;
+        if (currentSlide < 1) {
+            currentSlide = 1;
+        }
+        if (currentSlide > totalSlides) {
+            currentSlide = totalSlides;
+        }
+        showSlide(currentSlide);
+    }
+
+    // Initial setup
+    document.addEventListener('DOMContentLoaded', () => {
+        showSlide(currentSlide);
+    });
+</script>
+
 </body>
 </html>

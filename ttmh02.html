@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How the Wordle ML Guesser Works</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 2rem;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #4CAF50; /* Wordle Green */
+        }
+        
+        h2 {
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-top: 3rem;
+        }
+
+        p {
+            font-size: 1.1rem;
+            color: #b0b0b0;
+        }
+
+        .controls {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background-color: #1e1e1e;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        select, button {
+            font-size: 1rem;
+            padding: 0.8rem 1.2rem;
+            border-radius: 8px;
+            border: 1px solid #444;
+            background-color: #2a2a2a;
+            color: #e0e0e0;
+            cursor: pointer;
+        }
+
+        button {
+            background-color: #4CAF50;
+            border-color: #4CAF50;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #5cb85c;
+        }
+
+        .results-container {
+            display: none; /* Initially hidden */
+            margin-top: 2rem;
+            animation: fadeIn 0.8s ease-in-out;
+        }
+
+        .chart-container {
+            background-color: #1e1e1e;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        #ranking-container {
+            background-color: #1e1e1e;
+            padding: 1.5rem;
+            border-radius: 12px;
+        }
+        
+        .rank-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            text-align: left;
+        }
+        
+        .rank-list li {
+            padding: 0.8rem 1rem;
+            background-color: #2a2a2a;
+            margin-bottom: 0.5rem;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.2rem;
+            font-family: monospace;
+        }
+        
+        .rank-list li:first-child {
+            background-color: #b59f3b; /* Wordle Yellow */
+            color: #121212;
+            font-weight: bold;
+        }
+        
+        .final-guess {
+            margin-top: 2rem;
+            padding: 2rem;
+            background-color: #4CAF50;
+            color: #121212;
+            border-radius: 12px;
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Wordle 1/6 🟩</h1>
+        <p>This shows how we can guess the daily Wordle by analyzing thousands of shared results on Twitter. You are the data scientist: pick a day and see the process.</p>
+
+        <div class="controls">
+            <label for="wordle-day-select">Choose a past Wordle puzzle:</label>
+            <select id="wordle-day-select">
+                <option value="210">Wordle #210</option>
+                <option value="231">Wordle #231</option>
+                <option value="324">Wordle #324</option>
+            </select>
+            <button id="run-button">Analyze!</button>
+        </div>
+
+        <div id="results-container" class="results-container">
+            
+            <section id="step-1">
+                <h2>Step 1: The Twitter "Fingerprint"</h2>
+                <p>First, we collect all the ⬛🟨🟩 patterns from tweets for that day. This creates a unique frequency pattern, or a "fingerprint," of the solution.</p>
+                <div class="chart-container">
+                     <canvas id="observed-chart"></canvas>
+                </div>
+            </section>
+
+            <section id="step-2">
+                <h2>Step 2: Compare Fingerprints</h2>
+                <p>Next, we compare the Twitter fingerprint against our pre-computed fingerprints for all 12,972 possible words. The real answer's fingerprint should be a very close match.</p>
+                <div class="comparison-grid">
+                    <div class="chart-container">
+                        <h3>Good Match 👍</h3>
+                        <canvas id="good-match-chart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Bad Match 👎</h3>
+                        <canvas id="bad-match-chart"></canvas>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="step-3">
+                <h2>Step 3: Rank by Similarity</h2>
+                <p>We score every possible word based on how similar its fingerprint is to the one from Twitter. The best match gets the highest rank.</p>
+                <div id="ranking-container">
+                    <h3>Top 5 Guesses:</h3>
+                    <ul id="rank-list" class="rank-list"></ul>
+                </div>
+            </section>
+            
+             <section id="step-4">
+                 <h2>Step 4: The Final Guess</h2>
+                 <div id="final-guess" class="final-guess"></div>
+            </section>
+
+        </div>
+    </div>
+
+<script>
+    // --- MOCK DATA ---
+    // In a real application, this data would come from a server.
+    // This is pre-processed from the notebook for illustration.
+    const mockData = {
+        '210': {
+            answer: 'PANIC',
+            guess: 'PANIC',
+            observed: { labels: ['NNYNN', 'YNNNN', 'NNNNN', 'YNYNN', 'YNNYM'], values: [18, 15, 12, 10, 8] },
+            goodMatch: { name: 'PANIC', values: [19, 14, 11, 11, 7] },
+            badMatch: { name: 'SAUCE', values: [5, 19, 9, 15, 12] },
+            ranking: [
+                { word: 'PANIC', score: 0.98 },
+                { word: 'PAINT', score: 0.85 },
+                { word: 'ANTIC', score: 0.82 },
+                { word: 'CANON', score: 0.76 },
+                { word: 'MANIC', score: 0.74 },
+            ]
+        },
+        '231': {
+            answer: 'ALOFT',
+            guess: 'SAUCE', // A day the model got it wrong initially
+            observed: { labels: ['NNYMN', 'NNNNN', 'YNNNN', 'MNNNN', 'NNNNY'], values: [22, 20, 18, 15, 12] },
+            goodMatch: { name: 'ALOFT', values: [21, 5, 19, 14, 11] },
+            badMatch: { name: 'SAUCE', values: [23, 19, 17, 16, 11] }, // Sauce was a close but wrong guess
+            ranking: [
+                { word: 'SAUCE', score: 0.95 },
+                { word: 'SHADE', score: 0.93 },
+                { word: 'ALOFT', score: 0.92 }, // Actual answer was 3rd
+                { word: 'SLATE', score: 0.88 },
+                { word: 'CRATE', score: 0.85 },
+            ]
+        },
+        '324': {
+            answer: 'SHINY',
+            guess: 'SHINE', // Another close miss
+            observed: { labels: ['YYYNN', 'NNNNN', 'YNNNN', 'NNYNN', 'YNYYN'], values: [25, 18, 15, 11, 9] },
+            goodMatch: { name: 'SHINY', values: [24, 4, 16, 10, 8] },
+            badMatch: { name: 'BOARD', values: [5, 22, 12, 19, 14] },
+            ranking: [
+                { word: 'SHINE', score: 0.97 },
+                { word: 'CHINS', score: 0.89 },
+                { word: 'SPINY', score: 0.88 },
+                { word: 'WHINY', score: 0.86 },
+                { word: 'SHINY', score: 0.85 },
+            ]
+        }
+    };
+
+    // Chart instances to be destroyed later
+    let observedChart, goodMatchChart, badMatchChart;
+
+    const runButton = document.getElementById('run-button');
+    const resultsContainer = document.getElementById('results-container');
+    const wordleSelect = document.getElementById('wordle-day-select');
+
+    // Chart.js helper function
+    function createChart(canvasId, labels, data, chartLabel, color) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        return new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: chartLabel,
+                    data: data,
+                    backgroundColor: color,
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    title: { display: true, text: chartLabel, color: '#e0e0e0', font: { size: 16 }}
+                },
+                scales: {
+                    y: { ticks: { color: '#aaa' }, grid: { color: '#444' } },
+                    x: { ticks: { color: '#aaa' }, grid: { color: 'transparent' } }
+                }
+            }
+        });
+    }
+
+    runButton.addEventListener('click', () => {
+        // Clear previous results if any
+        if (observedChart) observedChart.destroy();
+        if (goodMatchChart) goodMatchChart.destroy();
+        if (badMatchChart) badMatchChart.destroy();
+        
+        // Get selected day's data
+        const selectedDay = wordleSelect.value;
+        const data = mockData[selectedDay];
+
+        // 1. Render Observed Chart
+        observedChart = createChart('observed-chart', data.observed.labels, data.observed.values, 'Twitter Fingerprint', '#4CAF50');
+
+        // 2. Render Comparison Charts
+        goodMatchChart = createChart('good-match-chart', data.observed.labels, data.goodMatch.values, `Simulation for: ${data.goodMatch.name}`, '#b59f3b');
+        badMatchChart = createChart('bad-match-chart', data.observed.labels, data.badMatch.values, `Simulation for: ${data.badMatch.name}`, '#787c7e');
+        
+        // 3. Render Ranking List
+        const rankList = document.getElementById('rank-list');
+        rankList.innerHTML = ''; // Clear previous list
+        data.ranking.forEach(item => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span>${item.word}</span> <span>Score: ${item.score}</span>`;
+            rankList.appendChild(li);
+        });
+        
+        // 4. Render Final Guess
+        const finalGuessEl = document.getElementById('final-guess');
+        if (data.guess === data.answer) {
+            finalGuessEl.innerHTML = `✅ Our guess is ${data.guess}, which was correct!`;
+            finalGuessEl.style.backgroundColor = '#4CAF50';
+        } else {
+            finalGuessEl.innerHTML = `❌ Our guess was ${data.guess}, but the answer was ${data.answer}. (Ranked #${data.ranking.findIndex(w => w.word === data.answer) + 1})`;
+            finalGuessEl.style.backgroundColor = '#c93333';
+        }
+
+        // Show the results
+        resultsContainer.style.display = 'block';
+    });
+</script>
+
+</body>
+</html>

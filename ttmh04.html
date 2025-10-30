@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Final Guess</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 2rem;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #4CAF50; /* Wordle Green */
+        }
+        
+        h2 {
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            color: #b0b0b0;
+            max-width: 700px;
+            margin: 1rem auto 2rem auto;
+        }
+
+        .button-container {
+            margin: 2rem 0;
+        }
+
+        button {
+            font-size: 1.2rem;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            border: 1px solid #4CAF50;
+            background-color: #4CAF50;
+            color: #121212;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+
+        button:hover {
+            background-color: #5cb85c;
+            transform: scale(1.05);
+        }
+
+        .ranks-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .rank-column {
+            background-color: #1e1e1e;
+            padding: 1rem;
+            border-radius: 12px;
+        }
+        
+        .rank-column h3 {
+            color: #b59f3b; /* Wordle Yellow */
+        }
+        
+        .rank-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            text-align: left;
+        }
+        
+        .rank-list li {
+            padding: 0.7rem;
+            background-color: #2a2a2a;
+            margin-bottom: 0.5rem;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 1.1rem;
+        }
+        .rank-list li .rank-num {
+            display: inline-block;
+            width: 25px;
+            color: #888;
+        }
+
+        #final-result-container {
+            display: none;
+            margin-top: 2rem;
+            animation: fadeIn 0.8s ease-in-out;
+        }
+
+        #final-rank-list li:first-child {
+            background-color: #4CAF50;
+            color: #121212;
+            font-weight: bold;
+            transform: scale(1.05);
+        }
+        #final-rank-list .avg-rank {
+            float: right;
+            color: #ccc;
+        }
+        #final-rank-list li:first-child .avg-rank {
+            color: #121212;
+        }
+
+        .final-guess-box {
+            margin-top: 2.5rem;
+            padding: 2rem;
+            background-color: #1e1e1e;
+            border-left: 5px solid #4CAF50;
+            border-radius: 8px;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        
+        .final-guess-box .word {
+            font-family: monospace;
+            color: #4CAF50;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>The Final Guess</h1>
+        <p>After three separate analyses, every word has three different ranks. Now, we combine these "opinions" by averaging the ranks to find the single most likely answer.</p>
+
+        <div id="initial-ranks" class="ranks-container">
+            <div class="rank-column">
+                <h3>#1: Overall Patterns</h3>
+                <ul class="rank-list">
+                    <li><span class="rank-num">1.</span> PANIC</li>
+                    <li><span class="rank-num">2.</span> ANTIC</li>
+                    <li><span class="rank-num">3.</span> PAINT</li>
+                    <li><span class="rank-num">4.</span> CANON</li>
+                    <li><span class="rank-num">5.</span> MANIC</li>
+                </ul>
+            </div>
+            <div class="rank-column">
+                <h3>#2: Penultimate Patterns</h3>
+                <ul class="rank-list">
+                    <li><span class="rank-num">1.</span> PANIC</li>
+                    <li><span class="rank-num">2.</span> PAINT</li>
+                    <li><span class="rank-num">3.</span> CANON</li>
+                    <li><span class="rank-num">2.</span> ANTIC</li>
+                    <li><span class="rank-num">5.</span> MANIC</li>
+                </ul>
+            </div>
+            <div class="rank-column">
+                <h3>#3: Invalid Patterns</h3>
+                <ul class="rank-list">
+                    <li><span class="rank-num">1.</span> CANON</li>
+                    <li><span class="rank-num">2.</span> PANIC</li>
+                    <li><span class="rank-num">3.</span> MANIC</li>
+                    <li><span class="rank-num">4.</span> PAINT</li>
+                    <li><span class="rank-num">5.</span> ANTIC</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="button-container">
+            <button id="combine-button">Calculate Final Guess 🏆</button>
+        </div>
+
+        <div id="final-result-container">
+            <h2>Final Combined Ranking</h2>
+            <div class="rank-column" style="max-width: 400px; margin: auto;">
+                <ul id="final-rank-list" class="rank-list">
+                    <li>
+                        <span class="rank-num">1.</span> PANIC 
+                        <span class="avg-rank">Avg: 1.33</span>
+                    </li>
+                    <li>
+                        <span class="rank-num">2.</span> CANON 
+                        <span class="avg-rank">Avg: 2.67</span>
+                    </li>
+                    <li>
+                        <span class="rank-num">3.</span> PAINT 
+                        <span class="avg-rank">Avg: 3.00</span>
+                    </li>
+                     <li>
+                        <span class="rank-num">4.</span> ANTIC 
+                        <span class="avg-rank">Avg: 3.67</span>
+                    </li>
+                     <li>
+                        <span class="rank-num">5.</span> MANIC 
+                        <span class="avg-rank">Avg: 4.00</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="final-guess-box">
+                The most probable answer is <span class="word">PANIC</span> ✅
+            </div>
+        </div>
+    </div>
+
+<script>
+    const combineButton = document.getElementById('combine-button');
+    const initialRanksDiv = document.getElementById('initial-ranks');
+    const finalResultContainer = document.getElementById('final-result-container');
+
+    combineButton.addEventListener('click', () => {
+        // Hide the initial three columns
+        initialRanksDiv.style.opacity = '0';
+        combineButton.style.display = 'none';
+
+        // After the fade-out transition, display the final result
+        setTimeout(() => {
+            initialRanksDiv.style.display = 'none';
+            finalResultContainer.style.display = 'block';
+        }, 500); // Matches the CSS transition duration
+    });
+</script>
+
+</body>
+</html>
